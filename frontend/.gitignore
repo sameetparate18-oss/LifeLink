@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+
+# Database files (IMPORTANT)
+lifelink.db
+frontend/lifelink.db
+
+# Virtual environment
+venv/
+
+# Streamlit cache
+.streamlit/
