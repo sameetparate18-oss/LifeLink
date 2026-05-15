@@ -2,161 +2,368 @@ import streamlit as st
 import sys
 import os
 import time
+import requests
 
 # ---------------- PATH FIX ----------------
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from ai.ml_model import find_best_donors
+sys.path.append(
+    os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            ".."
+        )
+    )
+)
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="LifeLink AI", layout="wide")
+
+st.set_page_config(
+    page_title="LifeLink AI",
+    layout="wide",
+    page_icon="❤️"
+)
+
+# ---------------- GLOBAL STYLES ----------------
+
+st.markdown("""
+<style>
+
+.main {
+    background-color: #0b1220;
+}
+
+/* TITLE */
+
+.title {
+    font-size: 40px;
+    font-weight: 800;
+    color: white;
+}
+
+.accent {
+    color: #ff4b4b;
+}
+
+/* KPI CARD */
+
+.kpi {
+    background: #111827;
+    border: 1px solid #1f2937;
+    padding: 18px;
+    border-radius: 14px;
+    text-align: center;
+    height: 120px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.kpi h3 {
+    font-size: 14px;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.kpi h2 {
+    font-size: 28px;
+    color: white;
+    margin: 0;
+}
+
+/* CARD */
+
+.card {
+    background: #111827;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid #1f2937;
+    margin-bottom: 10px;
+}
+
+/* STATUS */
+
+.status {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.good {
+    background: #14532d;
+    color: #4ade80;
+}
+
+.mid {
+    background: #78350f;
+    color: #fbbf24;
+}
+
+.bad {
+    background: #7f1d1d;
+    color: #f87171;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ---------------- SESSION STATE ----------------
+
 if "results" not in st.session_state:
     st.session_state.results = []
 
 if "assigned" not in st.session_state:
     st.session_state.assigned = []
 
-if "history" not in st.session_state:
-    st.session_state.history = []
-
 if "points" not in st.session_state:
     st.session_state.points = 0
 
-# ---------------- UI HEADER ----------------
-st.title("❤️ LifeLink AI - Smart Blood & Organ Donation Network")
-st.caption("AI-powered, real-time donor matching system for emergencies")
+# ---------------- HEADER ----------------
 
-# ---------------- SIDEBAR ----------------
-menu = st.sidebar.radio(
-    "🚀 Navigation",
-    ["🏠 Dashboard", "🩸 Blood Donation", "🫀 Organ Donation", "🤖 AI Matching", "📊 Analytics", "🔔 Alerts"]
+st.markdown(
+    '<div class="title">❤️ LifeLink <span class="accent">AI</span></div>',
+    unsafe_allow_html=True
 )
 
-# ---------------- DASHBOARD ----------------
-if menu == "🏠 Dashboard":
+st.caption(
+    "Real-time Emergency Blood & Organ Matching System"
+)
+
+st.write("---")
+
+# ---------------- SIDEBAR ----------------
+
+menu = st.sidebar.radio(
+    "NAVIGATION",
+    [
+        "Dashboard",
+        "Blood Donation",
+        "Organ Donation",
+        "AI Matching",
+        "Disease Prediction",
+        "Analytics",
+        "Alerts"
+    ]
+)
+
+# ================= DASHBOARD =================
+
+if menu == "Dashboard":
+
     st.subheader("📊 System Overview")
 
     col1, col2, col3, col4 = st.columns(4)
 
-    col1.metric("🩸 Donors Assigned", len(st.session_state.assigned))
-    col2.metric("🚨 Emergencies", len(st.session_state.results))
-    col3.metric("🏅 Reward Points", st.session_state.points)
-    col4.metric("🤖 AI Status", "ACTIVE")
+    with col1:
 
-    st.info("LifeLink AI is monitoring emergency donation requests in real-time")
+        st.markdown(f"""
+        <div class="kpi">
+            <h3>🩸 Assigned</h3>
+            <h2>{len(st.session_state.assigned)}</h2>
+        </div>
+        """, unsafe_allow_html=True)
 
-# ---------------- BLOOD DONATION ----------------
-elif menu == "🩸 Blood Donation":
+    with col2:
+
+        st.markdown(f"""
+        <div class="kpi">
+            <h3>🚨 Emergencies</h3>
+            <h2>{len(st.session_state.results)}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+
+        st.markdown(f"""
+        <div class="kpi">
+            <h3>🏅 Points</h3>
+            <h2>{st.session_state.points}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col4:
+
+        st.markdown("""
+        <div class="kpi">
+            <h3>🤖 AI Status</h3>
+            <h2>ACTIVE</h2>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.write("---")
+
+    st.success(
+        "System actively monitoring donor network in real-time 🚑"
+    )
+
+# ================= BLOOD DONATION =================
+
+elif menu == "Blood Donation":
+
     st.subheader("🩸 Donor Registration")
 
-    name = st.text_input("Full Name")
-    blood_group = st.selectbox("Blood Group", ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"])
-    phone = st.text_input("Mobile Number")
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        name = st.text_input("Full Name")
+        phone = st.text_input("Mobile Number")
+
+    with col2:
+
+        blood_group = st.selectbox(
+            "Blood Group",
+            ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]
+        )
 
     if st.button("Register Donor"):
-        st.success("Donor Registered Successfully")
-        st.session_state.points += 10
 
-# ---------------- ORGAN DONATION ----------------
-elif menu == "🫀 Organ Donation":
+        if name and phone:
+
+            st.success("Donor Registered Successfully")
+
+            st.session_state.points += 10
+
+        else:
+
+            st.warning("Please fill all fields")
+
+# ================= ORGAN DONATION =================
+
+elif menu == "Organ Donation":
+
     st.subheader("🫀 Organ Donation Consent")
 
     organs = st.multiselect(
         "Select Organs",
-        ["Heart", "Kidney", "Liver", "Lungs", "Corneas", "Skin", "Bone"]
+        [
+            "Heart",
+            "Kidney",
+            "Liver",
+            "Lungs",
+            "Corneas",
+            "Skin",
+            "Bone"
+        ]
     )
 
     if st.button("Submit Consent"):
-        st.success("Organ Consent Submitted")
+
+        st.success("Consent Submitted Successfully")
+
         st.session_state.points += 20
 
-# ---------------- AI MATCHING ----------------
-elif menu == "🤖 AI Matching":
+# ================= AI MATCHING =================
+
+elif menu == "AI Matching":
+
     st.subheader("🚨 Emergency AI Matching Engine")
 
-    blood_group = st.selectbox(
-        "Required Blood Group",
-        ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]
+    st.info("AI matching module active")
+
+# ================= DISEASE PREDICTION =================
+
+elif menu == "Disease Prediction":
+
+    st.subheader("🩺 AI Disease Prediction")
+
+    st.write(
+        "Enter symptom values as 0 and 1 separated by commas"
     )
 
-    urgency = st.selectbox("Urgency Level", ["normal", "critical"])
+    symptom_input = st.text_input(
+        "Symptoms",
+        placeholder="Example: 1,0,1"
+    )
 
-    emergency = {
-        "blood_group": blood_group,
-        "lat": 21.1458,
-        "lon": 79.0882,
-        "urgency": urgency
-    }
+    if st.button("Predict Disease"):
 
-    donors = [
-        {"name": "Rahul", "blood_group": "A+", "lat": 21.15, "lon": 79.09, "trust_score": 80},
-        {"name": "Amit", "blood_group": "O+", "lat": 21.17, "lon": 79.08, "trust_score": 90},
-        {"name": "Neha", "blood_group": "B+", "lat": 21.20, "lon": 79.05, "trust_score": 70},
-        {"name": "Karan", "blood_group": "A+", "lat": 21.16, "lon": 79.10, "trust_score": 85},
-        {"name": "Sahil", "blood_group": "O-", "lat": 21.14, "lon": 79.07, "trust_score": 95},
-    ]
+        try:
 
-    if st.button("🚨 Trigger Emergency Matching"):
-        with st.spinner("AI is analyzing donors..."):
-            time.sleep(2)
+            symptoms = [
+                int(x.strip())
+                for x in symptom_input.split(",")
+            ]
 
-        results = find_best_donors(donors, emergency)
+            with st.spinner("AI analyzing symptoms..."):
 
-        st.session_state.results = results
-        st.session_state.history.append(results)
+                response = requests.post(
+                    "http://127.0.0.1:8000/predict",
+                    json={
+                        "symptoms": symptoms
+                    }
+                )
 
-        st.success("Top Matching Donors Found")
+                data = response.json()
 
-        for i, r in enumerate(results, 1):
+                time.sleep(1)
 
-            col1, col2, col3 = st.columns([2, 1, 1])
+            st.success("Prediction Completed ✅")
 
-            with col1:
-                st.markdown(f"### 👤 {r['name']}")
-                st.write(f"🩸 Blood Group: {r['blood_group']}")
+            st.markdown(f"""
+            <div class="card">
+                <h2>🧠 Predicted Disease</h2>
+                <h1 style="color:#4ade80;">
+                    {data['prediction']}
+                </h1>
+            </div>
+            """, unsafe_allow_html=True)
 
-            with col2:
-                st.markdown(f"### ⭐ Score: {r['score']}")
+        except Exception as e:
 
-            with col3:
-                if st.button(f"Assign {r['name']}"):
-                    st.session_state.assigned.append(r['name'])
-                    st.session_state.points += 50
-                    st.success(f"{r['name']} Assigned 🚑")
+            st.error(str(e))
 
-        st.info("""
-🧠 AI Explanation:
-- Blood group compatibility check
-- Distance-based ranking
-- Trust score evaluation
-- Urgency boost applied
-""")
+# ================= ANALYTICS =================
 
-# ---------------- ANALYTICS ----------------
-elif menu == "📊 Analytics":
+elif menu == "Analytics":
+
     st.subheader("📊 System Analytics")
 
-    st.metric("Total Assignments", len(st.session_state.assigned))
-    st.metric("Total Emergencies", len(st.session_state.results))
-    st.metric("Reward Points", st.session_state.points)
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric(
+        "Assignments",
+        len(st.session_state.assigned)
+    )
+
+    col2.metric(
+        "Emergencies",
+        len(st.session_state.results)
+    )
+
+    col3.metric(
+        "Points",
+        st.session_state.points
+    )
+
+    st.write("---")
 
     st.bar_chart({
-        "Assignments": [len(st.session_state.assigned)],
-        "Emergencies": [len(st.session_state.results)]
+        "Assignments": [
+            len(st.session_state.assigned)
+        ],
+
+        "Emergencies": [
+            len(st.session_state.results)
+        ]
     })
 
-# ---------------- ALERTS ----------------
-elif menu == "🔔 Alerts":
-    st.subheader("🔔 Emergency Alerts System")
+# ================= ALERTS =================
+
+elif menu == "Alerts":
+
+    st.subheader("🔔 Emergency Alerts")
 
     if not st.session_state.results:
-        st.warning("No active emergencies")
+
+        st.info("No active emergencies right now")
+
     else:
+
         for r in st.session_state.results:
-            st.markdown(f"""
-            ### 🚨 {r['name']}
-            - Score: {r['score']}
-            - Status: Pending / Assigned
-            """)
+
+            st.error(
+                f"🚨 {r['name']} - Score {r['score']}"
+            )
