@@ -1,0 +1,355 @@
+{
+  "metadata": {
+    "project": "LifeLink AI",
+    "version": "5.0.0",
+    "description": "Advanced AI Medical Intelligence Database",
+    "last_updated": "2026-05-16",
+    "supported_features": [
+      "Disease Prediction",
+      "Symptom Analysis",
+      "Emergency Detection",
+      "AI Severity Scoring",
+      "Blood Requirement Analysis",
+      "Organ Risk Assessment",
+      "Medical Recommendations",
+      "Hospital Priority Routing"
+    ]
+  },
+
+  "diseases": {
+
+    "flu": {
+
+      "id": "D001",
+
+      "name": "Influenza",
+
+      "category": "Viral Infection",
+
+      "severity_level": "medium",
+
+      "emergency": false,
+
+      "contagious": true,
+
+      "ai_priority_score": 55,
+
+      "survival_rate": "99%",
+
+      "estimated_recovery_days": 7,
+
+      "description":
+        "A contagious viral infection affecting the respiratory tract.",
+
+      "symptoms": [
+        {
+          "name": "fever",
+          "weight": 0.9
+        },
+        {
+          "name": "cough",
+          "weight": 0.8
+        },
+        {
+          "name": "headache",
+          "weight": 0.7
+        },
+        {
+          "name": "fatigue",
+          "weight": 0.8
+        }
+      ],
+
+      "recommended_tests": [
+        "Influenza Test",
+        "Blood Test"
+      ],
+
+      "precautions": [
+        "Drink fluids",
+        "Take proper rest",
+        "Avoid cold exposure",
+        "Wear a mask"
+      ],
+
+      "recommended_specialists": [
+        "General Physician"
+      ],
+
+      "recommended_medications": [
+        "Paracetamol",
+        "Antiviral Medication"
+      ],
+
+      "blood_requirement": {
+        "required": false,
+        "blood_groups": []
+      },
+
+      "organ_risk": {
+        "heart": "low",
+        "lungs": "medium",
+        "kidney": "low"
+      },
+
+      "emergency_actions": [
+        "Monitor fever",
+        "Seek medical attention if breathing worsens"
+      ]
+    },
+
+    "covid19": {
+
+      "id": "D002",
+
+      "name": "COVID-19",
+
+      "category": "Respiratory Viral Disease",
+
+      "severity_level": "high",
+
+      "emergency": true,
+
+      "contagious": true,
+
+      "ai_priority_score": 90,
+
+      "survival_rate": "95%",
+
+      "estimated_recovery_days": 14,
+
+      "description":
+        "A severe contagious respiratory illness caused by coronavirus.",
+
+      "symptoms": [
+        {
+          "name": "fever",
+          "weight": 0.9
+        },
+        {
+          "name": "loss of smell",
+          "weight": 1.0
+        },
+        {
+          "name": "breathing difficulty",
+          "weight": 1.0
+        },
+        {
+          "name": "fatigue",
+          "weight": 0.8
+        }
+      ],
+
+      "recommended_tests": [
+        "RT-PCR",
+        "CT Scan",
+        "Oxygen Saturation Test"
+      ],
+
+      "precautions": [
+        "Immediate isolation",
+        "Hydration",
+        "Monitor oxygen",
+        "Wear N95 mask"
+      ],
+
+      "recommended_specialists": [
+        "Pulmonologist",
+        "Critical Care Specialist"
+      ],
+
+      "recommended_medications": [
+        "Antivirals",
+        "Oxygen Support"
+      ],
+
+      "blood_requirement": {
+        "required": true,
+        "blood_groups": [
+          "O+",
+          "A+"
+        ]
+      },
+
+      "organ_risk": {
+        "heart": "medium",
+        "lungs": "critical",
+        "kidney": "medium"
+      },
+
+      "emergency_actions": [
+        "Call emergency services",
+        "Provide oxygen support",
+        "Hospitalize if oxygen drops below 92%"
+      ]
+    },
+
+    "heart_attack": {
+
+      "id": "D003",
+
+      "name": "Heart Attack",
+
+      "category": "Cardiovascular Emergency",
+
+      "severity_level": "critical",
+
+      "emergency": true,
+
+      "contagious": false,
+
+      "ai_priority_score": 100,
+
+      "survival_rate": "Variable",
+
+      "estimated_recovery_days": 30,
+
+      "description":
+        "A life-threatening blockage of blood flow to the heart.",
+
+      "symptoms": [
+        {
+          "name": "chest pain",
+          "weight": 1.0
+        },
+        {
+          "name": "shortness of breath",
+          "weight": 0.9
+        },
+        {
+          "name": "arm pain",
+          "weight": 0.9
+        },
+        {
+          "name": "sweating",
+          "weight": 0.8
+        }
+      ],
+
+      "recommended_tests": [
+        "ECG",
+        "Troponin Test",
+        "Angiography"
+      ],
+
+      "precautions": [
+        "Avoid stress",
+        "Maintain healthy diet",
+        "Regular exercise"
+      ],
+
+      "recommended_specialists": [
+        "Cardiologist"
+      ],
+
+      "recommended_medications": [
+        "Aspirin",
+        "Nitroglycerin"
+      ],
+
+      "blood_requirement": {
+        "required": true,
+        "blood_groups": [
+          "O-"
+        ]
+      },
+
+      "organ_risk": {
+        "heart": "critical",
+        "lungs": "medium",
+        "kidney": "medium"
+      },
+
+      "emergency_actions": [
+        "Call ambulance immediately",
+        "Provide CPR if unconscious",
+        "Immediate ICU support"
+      ]
+    },
+
+    "kidney_failure": {
+
+      "id": "D004",
+
+      "name": "Kidney Failure",
+
+      "category": "Organ Failure",
+
+      "severity_level": "critical",
+
+      "emergency": true,
+
+      "contagious": false,
+
+      "ai_priority_score": 95,
+
+      "survival_rate": "Depends on treatment",
+
+      "estimated_recovery_days": 60,
+
+      "description":
+        "Loss of kidney function leading to dangerous toxin buildup.",
+
+      "symptoms": [
+        {
+          "name": "swelling",
+          "weight": 0.8
+        },
+        {
+          "name": "fatigue",
+          "weight": 0.7
+        },
+        {
+          "name": "vomiting",
+          "weight": 0.9
+        },
+        {
+          "name": "reduced urination",
+          "weight": 1.0
+        }
+      ],
+
+      "recommended_tests": [
+        "Creatinine Test",
+        "Urine Test",
+        "Kidney Ultrasound"
+      ],
+
+      "precautions": [
+        "Reduce salt intake",
+        "Avoid dehydration",
+        "Monitor blood pressure"
+      ],
+
+      "recommended_specialists": [
+        "Nephrologist"
+      ],
+
+      "recommended_medications": [
+        "Dialysis",
+        "Blood Pressure Medication"
+      ],
+
+      "blood_requirement": {
+        "required": true,
+        "blood_groups": [
+          "A+",
+          "B+",
+          "O+"
+        ]
+      },
+
+      "organ_risk": {
+        "heart": "medium",
+        "lungs": "low",
+        "kidney": "critical"
+      },
+
+      "emergency_actions": [
+        "Immediate hospitalization",
+        "Emergency dialysis",
+        "Monitor electrolyte balance"
+      ]
+    }
+  }
+}
