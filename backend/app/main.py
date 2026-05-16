@@ -46,7 +46,6 @@ from app.ai.predictor import (
     predict_disease,
     predictor_health_check
 )
-
 # =========================================================
 # LOGGING
 # =========================================================

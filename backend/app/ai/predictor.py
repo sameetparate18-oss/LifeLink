@@ -2,398 +2,213 @@ import json
 import os
 import logging
 from typing import Dict, List, Any
+from difflib import SequenceMatcher
 
 
-# =========================================================
-# LOGGING CONFIGURATION
-# =========================================================
-
+# ================= LOGGING =================
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s"
 )
 
-logger = logging.getLogger(
-    "lifelink.ai.predictor"
-)
+logger = logging.getLogger("lifelink.ai.predictor")
 
 
-# =========================================================
-# LOAD AI DISEASE DATABASE
-# =========================================================
-
+# ================= LOAD DATABASE =================
 BASE_DIR = os.path.dirname(__file__)
-
-DATA_PATH = os.path.join(
-    BASE_DIR,
-    "disease_info.json"
-)
+DATA_PATH = os.path.join(BASE_DIR, "disease_info.json")
 
 try:
-
     with open(DATA_PATH, "r", encoding="utf-8") as f:
-
         disease_database = json.load(f)
-
-    logger.info(
-        "✅ Disease database loaded successfully"
-    )
+    logger.info("✅ Disease database loaded successfully")
 
 except Exception as e:
-
-    logger.error(
-        f"❌ Failed to load disease database: {str(e)}"
-    )
-
-    disease_database = {
-        "diseases": {}
-    }
+    logger.error(f"❌ DB load failed: {str(e)}")
+    disease_database = {"diseases": {}}
 
 
-# =========================================================
-# NORMALIZE TEXT
-# =========================================================
+# ================= MEDICAL KNOWLEDGE LAYER =================
+MEDICAL_SYNONYMS = {
+    "fever": ["pyrexia", "high temperature", "hot body"],
+    "cough": ["dry cough", "wet cough"],
+    "breathing difficulty": ["shortness of breath", "dyspnea", "asthma-like"],
+    "chest pain": ["heart pain", "angina", "tight chest"],
+    "fatigue": ["weakness", "tiredness", "exhaustion"],
+    "vomiting": ["nausea", "throwing up"],
+    "headache": ["migraine", "head pain"],
+    "swelling": ["inflammation", "edema"]
+}
 
-def normalize_text(text: str) -> str:
 
+# ================= UTILITIES =================
+def normalize(text: str) -> str:
     return text.strip().lower()
 
 
-# =========================================================
-# AI DISEASE PREDICTION ENGINE
-# =========================================================
+def similarity(a: str, b: str) -> float:
+    return SequenceMatcher(None, a, b).ratio()
 
-def predict_disease(
-    symptoms: List[str]
-) -> Dict[str, Any]:
 
-    """
-    AI disease prediction engine using
-    weighted symptom matching.
-    """
+def expand(symptoms: List[str]) -> List[str]:
+    expanded = []
+
+    for s in symptoms:
+        s = normalize(s)
+        expanded.append(s)
+
+        for key, vals in MEDICAL_SYNONYMS.items():
+            if s == key or s in vals:
+                expanded.append(key)
+                expanded.extend(vals)
+
+    return list(set(expanded))
+
+
+# ================= CORE AI ENGINE =================
+def predict_disease(symptoms: List[str]) -> Dict[str, Any]:
 
     try:
 
-        # =================================================
-        # VALIDATE INPUT
-        # =================================================
-
         if not symptoms:
-
             return {
-
-                "prediction":
-                    "No Symptoms Provided",
-
-                "confidence":
-                    "0%",
-
-                "severity":
-                    "unknown",
-
-                "description":
-                    "Please provide symptoms.",
-
-                "precautions":
-                    []
+                "prediction": "No Symptoms Provided",
+                "confidence": "0%",
+                "severity": "unknown",
+                "description": "Please enter symptoms",
+                "precautions": []
             }
 
-        # =================================================
-        # CLEAN INPUT
-        # =================================================
+        # expand medical intelligence
+        input_symptoms = expand(symptoms)
 
-        input_symptoms = [
-
-            normalize_text(symptom)
-
-            for symptom in symptoms
-        ]
-
-        diseases = disease_database.get(
-            "diseases",
-            {}
-        )
+        diseases = disease_database.get("diseases", {})
 
         if not diseases:
-
             return {
-
-                "prediction":
-                    "Disease Database Missing",
-
-                "confidence":
-                    "0%",
-
-                "severity":
-                    "unknown",
-
-                "description":
-                    "No diseases found in database.",
-
-                "precautions":
-                    []
+                "prediction": "Database Missing",
+                "confidence": "0%",
+                "severity": "unknown",
+                "description": "No disease data available",
+                "precautions": []
             }
 
         best_match = None
+        best_score = 0
+        best_matches = []
 
-        highest_score = 0
+        # ================= SCORING ENGINE =================
+        for _, disease in diseases.items():
 
-        matched_symptoms = []
-
-        # =================================================
-        # CHECK EACH DISEASE
-        # =================================================
-
-        for disease_key, disease_data in diseases.items():
+            disease_symptoms = disease.get("symptoms", [])
 
             score = 0
+            matches = []
 
-            current_matches = []
+            for s in disease_symptoms:
 
-            disease_symptoms = disease_data.get(
-                "symptoms",
-                []
-            )
+                name = normalize(s.get("name", ""))
+                weight = s.get("weight", 1)
 
-            # =============================================
-            # MATCH SYMPTOMS
-            # =============================================
+                for inp in input_symptoms:
 
-            for symptom_data in disease_symptoms:
+                    # EXACT OR FUZZY MATCH
+                    if inp in name or name in inp:
+                        score += weight
+                        matches.append(name)
 
-                symptom_name = normalize_text(
-                    symptom_data.get(
-                        "name",
-                        ""
-                    )
-                )
+                    elif similarity(inp, name) > 0.82:
+                        score += weight * 0.8
+                        matches.append(name)
 
-                weight = symptom_data.get(
-                    "weight",
-                    0
-                )
+            # normalize score
+            if score > best_score:
+                best_score = score
+                best_match = disease
+                best_matches = matches
 
-                if symptom_name in input_symptoms:
-
-                    score += weight
-
-                    current_matches.append(
-                        symptom_name
-                    )
-
-            # =============================================
-            # SAVE BEST MATCH
-            # =============================================
-
-            if score > highest_score:
-
-                highest_score = score
-
-                best_match = disease_data
-
-                matched_symptoms = current_matches
-
-        # =================================================
-        # NO MATCH FOUND
-        # =================================================
-
-        if best_match is None:
-
+        # ================= NO MATCH =================
+        if not best_match:
             return {
-
-                "prediction":
-                    "Unknown Disease",
-
-                "confidence":
-                    "0%",
-
-                "severity":
-                    "unknown",
-
-                "description":
-                    "No matching disease found.",
-
+                "prediction": "Unknown Condition",
+                "confidence": "0%",
+                "severity": "low",
+                "description": "No strong disease match found.",
                 "precautions": [
-                    "Consult a doctor",
+                    "Consult doctor",
                     "Monitor symptoms",
-                    "Stay hydrated"
+                    "Avoid self-medication"
                 ]
             }
 
-        # =================================================
-        # AI CONFIDENCE CALCULATION
-        # =================================================
-
-        total_possible_weight = sum(
-
-            symptom.get("weight", 0)
-
-            for symptom in best_match.get(
-                "symptoms",
-                []
-            )
+        # ================= CONFIDENCE ENGINE =================
+        total_weight = sum(
+            s.get("weight", 1)
+            for s in best_match.get("symptoms", [])
         )
 
-        confidence = round(
+        base_confidence = (best_score / max(total_weight, 1)) * 100
+        confidence = min(round(base_confidence, 2), 99.9)
 
-            (
-                highest_score /
-                max(total_possible_weight, 1)
-            ) * 100,
+        # ================= SEVERITY ENGINE =================
+        severity = best_match.get("severity_level", "medium")
 
-            2
-        )
+        emergency = best_match.get("emergency", False)
 
-        confidence = min(
-            confidence,
-            99.9
-        )
+        if emergency and confidence > 60:
+            severity = "CRITICAL"
 
-        logger.info(
-            f"✅ Disease predicted: "
-            f"{best_match.get('name')}"
-        )
+        elif confidence > 80:
+            severity = "HIGH"
 
-        # =================================================
-        # FINAL RESPONSE
-        # =================================================
+        elif confidence > 50:
+            severity = "MEDIUM"
 
+        else:
+            severity = "LOW"
+
+        # ================= PRIORITY BOOST =================
+        priority_score = best_match.get("ai_priority_score", 0)
+        final_risk_score = round((confidence * 0.7) + (priority_score * 0.3), 2)
+
+        logger.info(f"Predicted: {best_match.get('name')}")
+
+        # ================= FINAL RESPONSE =================
         return {
-
-            "prediction":
-                best_match.get(
-                    "name",
-                    "Unknown"
-                ),
-
-            "confidence":
-                f"{confidence}%",
-
-            "severity":
-                best_match.get(
-                    "severity_level",
-                    "medium"
-                ),
-
-            "description":
-                best_match.get(
-                    "description",
-                    ""
-                ),
-
-            "matched_symptoms":
-                matched_symptoms,
-
-            "recommended_tests":
-                best_match.get(
-                    "recommended_tests",
-                    []
-                ),
-
-            "precautions":
-                best_match.get(
-                    "precautions",
-                    []
-                ),
-
-            "specialists":
-                best_match.get(
-                    "recommended_specialists",
-                    []
-                ),
-
-            "recommended_medications":
-                best_match.get(
-                    "recommended_medications",
-                    []
-                ),
-
-            "emergency":
-                best_match.get(
-                    "emergency",
-                    False
-                ),
-
-            "emergency_actions":
-                best_match.get(
-                    "emergency_actions",
-                    []
-                ),
-
-            "survival_rate":
-                best_match.get(
-                    "survival_rate",
-                    "Unknown"
-                ),
-
-            "estimated_recovery_days":
-                best_match.get(
-                    "estimated_recovery_days",
-                    "Unknown"
-                ),
-
-            "ai_priority_score":
-                best_match.get(
-                    "ai_priority_score",
-                    0
-                )
+            "prediction": best_match.get("name", "Unknown"),
+            "confidence": f"{confidence}%",
+            "severity": severity,
+            "risk_score": final_risk_score,
+            "description": best_match.get("description", ""),
+            "matched_symptoms": best_matches,
+            "recommended_tests": best_match.get("recommended_tests", []),
+            "precautions": best_match.get("precautions", []),
+            "recommended_medications": best_match.get("recommended_medications", []),
+            "specialists": best_match.get("recommended_specialists", []),
+            "emergency": emergency,
+            "emergency_actions": best_match.get("emergency_actions", []),
+            "survival_rate": best_match.get("survival_rate", "Unknown"),
+            "recovery_days": best_match.get("estimated_recovery_days", "Unknown")
         }
 
     except Exception as e:
 
-        logger.error(
-            f"❌ Prediction failed: {str(e)}"
-        )
+        logger.error(f"Prediction error: {str(e)}")
 
         return {
-
-            "prediction":
-                "Prediction Error",
-
-            "confidence":
-                "0%",
-
-            "severity":
-                "unknown",
-
-            "description":
-                "AI prediction failed.",
-
-            "precautions":
-                [],
-
-            "error":
-                str(e)
+            "prediction": "System Error",
+            "confidence": "0%",
+            "severity": "unknown",
+            "description": str(e),
+            "precautions": []
         }
 
 
-# =========================================================
-# AI HEALTH CHECK
-# =========================================================
-
+# ================= HEALTH CHECK =================
 def predictor_health_check():
 
-    """
-    AI predictor diagnostics.
-    """
-
     return {
-
-        "status":
-            "ACTIVE",
-
-        "database_loaded":
-            bool(
-                disease_database.get(
-                    "diseases"
-                )
-            ),
-
-        "total_diseases":
-            len(
-                disease_database.get(
-                    "diseases",
-                    {}
-                )
-            )
+        "status": "ACTIVE",
+        "database_loaded": bool(disease_database.get("diseases")),
+        "total_diseases": len(disease_database.get("diseases", {}))
     }
