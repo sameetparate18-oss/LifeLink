@@ -16,15 +16,99 @@ sys.path.append(
     )
 )
 
-# ================= PAGE CONFIG =================
+import streamlit as st
 
-st.set_page_config(
-    page_title="LifeLink AI",
-    page_icon="❤️",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="LifeLink AI", layout="wide")
 
+
+# ================= HOME PAGE =================
+def home_page():
+
+    st.markdown("""
+    <style>
+
+    .hero-title {
+        font-size: 70px;
+        font-weight: 900;
+        text-align: center;
+        background: linear-gradient(90deg, #ef4444, #f97316, #facc15);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+        text-align: center;
+        font-size: 20px;
+        color: #white;
+    }
+
+    .hero-description {
+        text-align: center;
+        color: #94a3b8;
+        max-width: 800px;
+        margin: auto;
+    }
+
+    .badge-container {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .badge {
+        background: rgba(255,255,255,0.05);
+        padding: 8px 14px;
+        border-radius: 20px;
+        color: white;
+        font-size: 13px;
+    }
+
+    </style>
+
+    <div class="hero-title"> LifeLink</div>
+
+    <div class="hero-subtitle">
+        Smart Blood & Organ Donation Network
+    </div>
+
+    <div class="hero-description">
+        AI-powered, privacy-first, multi-hospital connected healthcare platform
+        designed for real-time donor matching and emergency response.
+    </div>
+
+    <div class="badge-container">
+        <div class="badge">🩸 Blood Donation</div>
+        <div class="badge">🫀 Organ Donation</div>
+        <div class="badge">🤖 AI Matching</div>
+        <div class="badge">🔔 Real-time Alerts</div>
+        <div class="badge">👩 ASHA Integration</div>
+        <div class="badge">🏅 Reward System</div>
+        <div class="badge">🔒 Privacy-first</div>
+    </div>
+
+    """, unsafe_allow_html=True)
+
+
+# ================= DASHBOARD =================
+def dashboard_page():
+    st.title("📊 Dashboard")
+
+
+# ================= ROUTER =================
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
+
+def router():
+    if st.session_state.page == "home":
+        home_page()
+    elif st.session_state.page == "dashboard":
+        dashboard_page()
+
+
+router()
 # ================= CUSTOM CSS =================
 
 st.markdown("""
@@ -214,6 +298,7 @@ if "assigned" not in st.session_state:
 if "points" not in st.session_state:
     st.session_state.points = 0
 
+
 # ================= SIDEBAR =================
 
 st.sidebar.title("🚑 LifeLink AI")
@@ -235,10 +320,11 @@ st.sidebar.write("---")
 
 st.sidebar.success("🤖 AI SYSTEM ACTIVE")
 
-st.sidebar.metric(
-    "Reward Points",
-    st.session_state.points
-)
+# SAFE session state handling
+if "points" not in st.session_state:
+    st.session_state.points = 0
+
+st.sidebar.metric("🏅 Reward Points", st.session_state.points)
 
 # ================= DASHBOARD =================
 

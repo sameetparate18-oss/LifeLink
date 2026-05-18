@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import logging
 import secrets
 
@@ -10,255 +11,170 @@ from app.core.config import settings
 
 
 # =========================================================
-# LOGGING CONFIGURATION
+# LOGGING
 # =========================================================
 
-logging.basicConfig(
-    level=settings.LOG_LEVEL
-)
-
+logging.basicConfig(level=settings.LOG_LEVEL)
 logger = logging.getLogger("lifelink.security")
 
 
 # =========================================================
-# PASSWORD HASHING CONFIGURATION
+# PASSWORD HASHING
 # =========================================================
 
 pwd_context = CryptContext(
-
     schemes=["bcrypt"],
-
     deprecated="auto",
-
     bcrypt__rounds=12
 )
 
 
-# =========================================================
-# PASSWORD UTILITIES
-# =========================================================
-
 def hash_password(password: str) -> str:
-
-    """
-    Hash a plain password securely.
-    """
-
     return pwd_context.hash(password)
 
 
-def verify_password(
-    plain_password: str,
-    hashed_password: str
-) -> bool:
-
-    """
-    Verify plain password against hash.
-    """
-
-    return pwd_context.verify(
-        plain_password,
-        hashed_password
-    )
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 # =========================================================
-# ACCESS TOKEN CREATION
+# TOKEN CREATION (COMMON CORE)
 # =========================================================
 
-def create_access_token(
+def _create_token(
     data: Dict[str, Any],
-    expires_delta: Optional[timedelta] = None
+    expires_delta: timedelta,
+    token_type: str
 ) -> str:
 
-    """
-    Create JWT access token.
-    """
+    payload = data.copy()
 
-    to_encode = data.copy()
-
-    if expires_delta:
-
-        expire = datetime.utcnow() + expires_delta
-
-    else:
-
-        expire = datetime.utcnow() + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-
-    # JWT PAYLOAD
-
-    to_encode.update({
-        "exp": expire,
-        "type": "access",
+    payload.update({
+        "exp": datetime.utcnow() + expires_delta,
         "iat": datetime.utcnow(),
+        "type": token_type,
         "jti": secrets.token_hex(16)
     })
 
-    encoded_jwt = jwt.encode(
-
-        to_encode,
-
+    return jwt.encode(
+        payload,
         settings.SECRET_KEY,
-
         algorithm=settings.ALGORITHM
     )
 
-    logger.info(
-        "✅ Access token created successfully"
-    )
 
-    return encoded_jwt
+# =========================================================
+# ACCESS TOKEN
+# =========================================================
+
+def create_access_token(data: Dict[str, Any]) -> str:
+    """
+    data MUST include:
+    {
+        "sub": user_id,
+        "role": "donor | hospital | admin"
+    }
+    """
+
+    return _create_token(
+        data,
+        timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        "access"
+    )
 
 
 # =========================================================
-# REFRESH TOKEN CREATION
+# REFRESH TOKEN
 # =========================================================
 
-def create_refresh_token(
-    data: Dict[str, Any]
-) -> str:
-
-    """
-    Create refresh JWT token.
-    """
-
-    to_encode = data.copy()
-
-    expire = datetime.utcnow() + timedelta(
-        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+def create_refresh_token(data: Dict[str, Any]) -> str:
+    return _create_token(
+        data,
+        timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        "refresh"
     )
-
-    to_encode.update({
-        "exp": expire,
-        "type": "refresh",
-        "iat": datetime.utcnow(),
-        "jti": secrets.token_hex(16)
-    })
-
-    refresh_token = jwt.encode(
-
-        to_encode,
-
-        settings.SECRET_KEY,
-
-        algorithm=settings.ALGORITHM
-    )
-
-    logger.info(
-        "✅ Refresh token created successfully"
-    )
-
-    return refresh_token
 
 
 # =========================================================
-# TOKEN VERIFICATION
+# VERIFY TOKEN
 # =========================================================
 
-def verify_token(
-    token: str
-) -> Dict[str, Any]:
-
-    """
-    Verify and decode JWT token.
-    """
-
+def verify_token(token: str, expected_type: str = "access") -> Dict[str, Any]:
     try:
-
         payload = jwt.decode(
-
             token,
-
             settings.SECRET_KEY,
-
             algorithms=[settings.ALGORITHM]
         )
+
+        # check token type
+        if payload.get("type") != expected_type:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type"
+            )
 
         return payload
 
     except JWTError as e:
-
-        logger.error(
-            f"❌ Invalid token: {str(e)}"
-        )
+        logger.error(f"❌ Token error: {str(e)}")
 
         raise HTTPException(
-
             status_code=status.HTTP_401_UNAUTHORIZED,
-
             detail="Invalid or expired token",
-
-            headers={
-                "WWW-Authenticate": "Bearer"
-            }
+            headers={"WWW-Authenticate": "Bearer"}
         )
 
 
 # =========================================================
-# GET CURRENT USER ID
+# GET USER FROM TOKEN
 # =========================================================
 
-def get_user_id_from_token(
-    token: str
-) -> Optional[int]:
+def get_user_from_token(token: str) -> Dict[str, Any]:
+    payload = verify_token(token)
 
-    """
-    Extract user ID from token.
-    """
+    user_id = payload.get("sub")
+    role = payload.get("role")
 
-    try:
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token payload"
+        )
 
-        payload = verify_token(token)
-
-        user_id = payload.get("sub")
-
-        if user_id is None:
-
-            return None
-
-        return int(user_id)
-
-    except Exception:
-
-        return None
+    return {
+        "user_id": int(user_id),
+        "role": role
+    }
 
 
 # =========================================================
-# PASSWORD STRENGTH VALIDATION
+# FASTAPI DEPENDENCY (VERY IMPORTANT)
 # =========================================================
 
-def validate_password_strength(
-    password: str
-) -> bool:
+security_scheme = HTTPBearer()
 
-    """
-    Validate password security.
-    """
 
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme)
+):
+    token = credentials.credentials
+    return get_user_from_token(token)
+
+
+# =========================================================
+# PASSWORD STRENGTH
+# =========================================================
+
+def validate_password_strength(password: str) -> bool:
     if len(password) < settings.PASSWORD_MIN_LENGTH:
-
         return False
 
-    has_upper = any(c.isupper() for c in password)
-
-    has_lower = any(c.islower() for c in password)
-
-    has_digit = any(c.isdigit() for c in password)
-
-    special_characters = "!@#$%^&*()-_=+"
-
-    has_special = any(
-        c in special_characters
-        for c in password
-    )
-
     return all([
-        has_upper,
-        has_lower,
-        has_digit,
-        has_special
+        any(c.isupper() for c in password),
+        any(c.islower() for c in password),
+        any(c.isdigit() for c in password),
+        any(c in "!@#$%^&*()-_=+" for c in password)
     ])
 
 
@@ -267,19 +183,11 @@ def validate_password_strength(
 # =========================================================
 
 def security_health_check() -> dict:
-
-    """
-    Security system diagnostics.
-    """
-
     return {
-
         "jwt_algorithm": settings.ALGORITHM,
-
-        "token_expiry_minutes":
-            settings.ACCESS_TOKEN_EXPIRE_MINUTES,
-
+        "access_token_expiry": settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+        "refresh_token_expiry_days": settings.REFRESH_TOKEN_EXPIRE_DAYS,
         "password_hashing": "bcrypt",
-
-        "security_status": "ACTIVE"
+        "security_status": "ACTIVE",
+        "roles_supported": ["donor", "hospital", "admin"]
     }
