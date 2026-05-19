@@ -1,214 +1,90 @@
-import json
-import os
-import logging
-from typing import Dict, List, Any
-from difflib import SequenceMatcher
+import streamlit as st
+import google.generativeai as genai
 
+# ================= GEMINI CONFIG =================
 
-# ================= LOGGING =================
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s"
+genai.configure(
+    api_key="AIzaSyDx1lrEg5_Ldryo3LZ0zgI12nHMdK7i0LA"
 )
 
-logger = logging.getLogger("lifelink.ai.predictor")
+model = genai.GenerativeModel(
+    "gemini-1.5-flash"
+)
 
+# ================= PAGE =================
 
-# ================= LOAD DATABASE =================
-BASE_DIR = os.path.dirname(__file__)
-DATA_PATH = os.path.join(BASE_DIR, "disease_info.json")
+st.set_page_config(
+    page_title="LifeLink AI",
+    layout="wide"
+)
 
-try:
-    with open(DATA_PATH, "r", encoding="utf-8") as f:
-        disease_database = json.load(f)
-    logger.info("✅ Disease database loaded successfully")
+st.title("🏥 LifeLink AI Assistant")
 
-except Exception as e:
-    logger.error(f"❌ DB load failed: {str(e)}")
-    disease_database = {"diseases": {}}
+st.write(
+    "Ask anything about health, diseases, symptoms, medicines, fitness, or wellness."
+)
 
+# ================= CHAT HISTORY =================
 
-# ================= MEDICAL KNOWLEDGE LAYER =================
-MEDICAL_SYNONYMS = {
-    "fever": ["pyrexia", "high temperature", "hot body"],
-    "cough": ["dry cough", "wet cough"],
-    "breathing difficulty": ["shortness of breath", "dyspnea", "asthma-like"],
-    "chest pain": ["heart pain", "angina", "tight chest"],
-    "fatigue": ["weakness", "tiredness", "exhaustion"],
-    "vomiting": ["nausea", "throwing up"],
-    "headache": ["migraine", "head pain"],
-    "swelling": ["inflammation", "edema"]
-}
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
+# DISPLAY OLD MESSAGES
 
-# ================= UTILITIES =================
-def normalize(text: str) -> str:
-    return text.strip().lower()
+for msg in st.session_state.messages:
 
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-def similarity(a: str, b: str) -> float:
-    return SequenceMatcher(None, a, b).ratio()
+# ================= USER INPUT =================
 
+user_input = st.chat_input(
+    "Describe symptoms or ask anything..."
+)
 
-def expand(symptoms: List[str]) -> List[str]:
-    expanded = []
+# ================= AI RESPONSE =================
 
-    for s in symptoms:
-        s = normalize(s)
-        expanded.append(s)
+if user_input:
 
-        for key, vals in MEDICAL_SYNONYMS.items():
-            if s == key or s in vals:
-                expanded.append(key)
-                expanded.extend(vals)
-
-    return list(set(expanded))
-
-
-# ================= CORE AI ENGINE =================
-def predict_disease(symptoms: List[str]) -> Dict[str, Any]:
-
-    try:
-
-        if not symptoms:
-            return {
-                "prediction": "No Symptoms Provided",
-                "confidence": "0%",
-                "severity": "unknown",
-                "description": "Please enter symptoms",
-                "precautions": []
-            }
-
-        # expand medical intelligence
-        input_symptoms = expand(symptoms)
-
-        diseases = disease_database.get("diseases", {})
-
-        if not diseases:
-            return {
-                "prediction": "Database Missing",
-                "confidence": "0%",
-                "severity": "unknown",
-                "description": "No disease data available",
-                "precautions": []
-            }
-
-        best_match = None
-        best_score = 0
-        best_matches = []
-
-        # ================= SCORING ENGINE =================
-        for _, disease in diseases.items():
-
-            disease_symptoms = disease.get("symptoms", [])
-
-            score = 0
-            matches = []
-
-            for s in disease_symptoms:
-
-                name = normalize(s.get("name", ""))
-                weight = s.get("weight", 1)
-
-                for inp in input_symptoms:
-
-                    # EXACT OR FUZZY MATCH
-                    if inp in name or name in inp:
-                        score += weight
-                        matches.append(name)
-
-                    elif similarity(inp, name) > 0.82:
-                        score += weight * 0.8
-                        matches.append(name)
-
-            # normalize score
-            if score > best_score:
-                best_score = score
-                best_match = disease
-                best_matches = matches
-
-        # ================= NO MATCH =================
-        if not best_match:
-            return {
-                "prediction": "Unknown Condition",
-                "confidence": "0%",
-                "severity": "low",
-                "description": "No strong disease match found.",
-                "precautions": [
-                    "Consult doctor",
-                    "Monitor symptoms",
-                    "Avoid self-medication"
-                ]
-            }
-
-        # ================= CONFIDENCE ENGINE =================
-        total_weight = sum(
-            s.get("weight", 1)
-            for s in best_match.get("symptoms", [])
-        )
-
-        base_confidence = (best_score / max(total_weight, 1)) * 100
-        confidence = min(round(base_confidence, 2), 99.9)
-
-        # ================= SEVERITY ENGINE =================
-        severity = best_match.get("severity_level", "medium")
-
-        emergency = best_match.get("emergency", False)
-
-        if emergency and confidence > 60:
-            severity = "CRITICAL"
-
-        elif confidence > 80:
-            severity = "HIGH"
-
-        elif confidence > 50:
-            severity = "MEDIUM"
-
-        else:
-            severity = "LOW"
-
-        # ================= PRIORITY BOOST =================
-        priority_score = best_match.get("ai_priority_score", 0)
-        final_risk_score = round((confidence * 0.7) + (priority_score * 0.3), 2)
-
-        logger.info(f"Predicted: {best_match.get('name')}")
-
-        # ================= FINAL RESPONSE =================
-        return {
-            "prediction": best_match.get("name", "Unknown"),
-            "confidence": f"{confidence}%",
-            "severity": severity,
-            "risk_score": final_risk_score,
-            "description": best_match.get("description", ""),
-            "matched_symptoms": best_matches,
-            "recommended_tests": best_match.get("recommended_tests", []),
-            "precautions": best_match.get("precautions", []),
-            "recommended_medications": best_match.get("recommended_medications", []),
-            "specialists": best_match.get("recommended_specialists", []),
-            "emergency": emergency,
-            "emergency_actions": best_match.get("emergency_actions", []),
-            "survival_rate": best_match.get("survival_rate", "Unknown"),
-            "recovery_days": best_match.get("estimated_recovery_days", "Unknown")
+    # SHOW USER MESSAGE
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": user_input
         }
+    )
 
-    except Exception as e:
+    with st.chat_message("user"):
+        st.markdown(user_input)
 
-        logger.error(f"Prediction error: {str(e)}")
+    # AI RESPONSE
+    with st.chat_message("assistant"):
 
-        return {
-            "prediction": "System Error",
-            "confidence": "0%",
-            "severity": "unknown",
-            "description": str(e),
-            "precautions": []
-        }
+        with st.spinner("🧠 LifeLink AI Thinking..."):
 
+            prompt = f"""
+            You are LifeLink AI Healthcare Assistant.
 
-# ================= HEALTH CHECK =================
-def predictor_health_check():
+            Rules:
+            - Give professional medical guidance.
+            - Do not claim guaranteed diagnosis.
+            - Keep responses clear and modern.
+            - Suggest doctor consultation when needed.
+            - Answer conversationally.
 
-    return {
-        "status": "ACTIVE",
-        "database_loaded": bool(disease_database.get("diseases")),
-        "total_diseases": len(disease_database.get("diseases", {}))
-    }
+            User Query:
+            {user_input}
+            """
+
+            response = model.generate_content(prompt)
+
+            ai_reply = response.text
+
+            st.markdown(ai_reply)
+
+            st.session_state.messages.append(
+                {
+                    "role": "assistant",
+                    "content": ai_reply
+                }
+            )

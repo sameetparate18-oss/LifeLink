@@ -18,7 +18,11 @@ sys.path.append(
 
 import streamlit as st
 
-st.set_page_config(page_title="LifeLink AI", layout="wide")
+st.set_page_config(
+    page_title="LifeLink AI",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 
 # ================= HOME PAGE =================
@@ -316,7 +320,9 @@ menu = st.sidebar.radio(
     ]
 )
 
-st.sidebar.write("---")
+if st.sidebar.button("Logout"):
+    st.session_state.logged_in = False
+    st.rerun()
 
 st.sidebar.success("🤖 AI SYSTEM ACTIVE")
 
@@ -419,151 +425,489 @@ if menu == "Dashboard":
 
 elif menu == "Blood Donation":
 
-    st.markdown(
-        '<div class="section-title">🩸 Blood Donor Registration</div>',
-        unsafe_allow_html=True
-    )
+    # ================= HEADER =================
 
-    st.markdown('<div class="glass">', unsafe_allow_html=True)
+    st.markdown("""
+    <style>
+
+    .blood-main-card{
+        background: linear-gradient(
+            135deg,
+            rgba(15,23,42,0.95),
+            rgba(30,41,59,0.95)
+        );
+        padding: 35px;
+        border-radius: 25px;
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+        backdrop-filter: blur(18px);
+        margin-top: 20px;
+    }
+
+    .blood-title{
+        font-size: 42px;
+        font-weight: 800;
+        color: white;
+        margin-bottom: 10px;
+    }
+
+    .blood-subtitle{
+        color: #cbd5e1;
+        font-size: 17px;
+        margin-bottom: 30px;
+    }
+
+    .blood-badge{
+        display:inline-block;
+        background: linear-gradient(90deg,#ef4444,#dc2626);
+        color:white;
+        padding:10px 20px;
+        border-radius:50px;
+        font-weight:700;
+        margin-bottom:20px;
+        box-shadow:0 4px 20px rgba(239,68,68,0.4);
+    }
+
+    .success-card{
+        background: linear-gradient(
+            135deg,
+            rgba(16,185,129,0.15),
+            rgba(5,150,105,0.10)
+        );
+        border:1px solid rgba(16,185,129,0.4);
+        padding:30px;
+        border-radius:20px;
+        margin-top:25px;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .info-box{
+        background: rgba(255,255,255,0.03);
+        border-radius: 18px;
+        padding: 20px;
+        margin-top: 20px;
+        border:1px solid rgba(255,255,255,0.06);
+    }
+
+    .status-active{
+        background:#22c55e;
+        color:white;
+        display:inline-block;
+        padding:10px 18px;
+        border-radius:30px;
+        margin-top:15px;
+        font-weight:700;
+    }
+
+    div[data-testid="stTextInput"] input {
+        background-color: rgba(255,255,255,0.04);
+        border:1px solid rgba(255,255,255,0.08);
+        color:white;
+        border-radius:14px;
+        padding:12px;
+    }
+
+    div[data-testid="stSelectbox"] {
+        border-radius:14px;
+    }
+
+    .stats-card{
+        background: rgba(255,255,255,0.04);
+        border:1px solid rgba(255,255,255,0.05);
+        border-radius:18px;
+        padding:20px;
+        text-align:center;
+    }
+
+    .stats-number{
+        font-size:32px;
+        font-weight:800;
+        color:#ef4444;
+    }
+
+    .stats-label{
+        color:#cbd5e1;
+        font-size:14px;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity:0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity:1;
+            transform: translateY(0px);
+        }
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+
+    # ================= LIVE STATS =================
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    stat1, stat2, stat3, stat4 = st.columns(4)
+
+    with stat1:
+        st.markdown("""
+        <div class="stats-card">
+            <div class="stats-number">12K+</div>
+            <div class="stats-label">Registered Donors</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with stat2:
+        st.markdown("""
+        <div class="stats-card">
+            <div class="stats-number">8K+</div>
+            <div class="stats-label">Lives Saved</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with stat3:
+        st.markdown("""
+        <div class="stats-card">
+            <div class="stats-number">24/7</div>
+            <div class="stats-label">Emergency Support</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with stat4:
+        st.markdown("""
+        <div class="stats-card">
+            <div class="stats-number">AI</div>
+            <div class="stats-label">Smart Matching</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ================= REGISTRATION FORM =================
+
+    st.markdown('<div class="blood-main-card">', unsafe_allow_html=True)
+
+    st.subheader("📝 Donor Registration Form")
 
     col1, col2 = st.columns(2)
 
     with col1:
 
-        name = st.text_input("👤 Full Name")
+        name = st.text_input(
+            "👤 Full Name",
+            placeholder="Enter your full name"
+        )
 
-        phone = st.text_input("📞 Mobile Number")
+        phone = st.text_input(
+            "📞 Mobile Number",
+            placeholder="Enter mobile number"
+        )
+
+        age = st.number_input(
+            "🎂 Age",
+            min_value=18,
+            max_value=65,
+            value=21
+        )
 
     with col2:
 
         blood_group = st.selectbox(
             "🩸 Blood Group",
             [
-                "A+",
-                "A-",
-                "B+",
-                "B-",
-                "O+",
-                "O-",
-                "AB+",
-                "AB-"
+                "A+", "A-", "B+", "B-",
+                "O+", "O-", "AB+", "AB-"
             ]
         )
 
-        city = st.text_input("📍 City")
+        city = st.text_input(
+            "📍 City",
+            placeholder="Enter your city"
+        )
 
-    if st.button("✅ Register Donor"):
+        availability = st.selectbox(
+            "🚨 Emergency Availability",
+            [
+                "Available Anytime",
+                "Available During Day",
+                "Available During Night",
+                "Weekends Only"
+            ]
+        )
 
-        if name and phone and city:
+    st.markdown("<br>", unsafe_allow_html=True)
 
-            st.session_state.points += 10
 
-            st.markdown(f"""
-            <div class="glass">
+    # ================= REGISTRATION SUCCESS =================
+register_clicked = st.button(
+    "✅ Register Donor",
+    use_container_width=True
+)
 
-            <h2 style="color:#4ade80;">
-            ✅ Registration Successful
-            </h2>
+if register_clicked:
 
-            <p style="color:#cbd5e1;">
-            Welcome <b>{name}</b>.
-            Your donor profile has been securely
-            registered in the LifeLink AI network.
-            </p>
+    if name != "" and phone != "" and city != "":
 
-            <hr style="border:1px solid #1f2937;">
+        st.session_state.points += 10
 
-            <p style="color:#94a3b8;">
-            🩸 Blood Group: <b>{blood_group}</b>
-            </p>
+        st.success("✅ Registration Successful")
 
-            <p style="color:#94a3b8;">
-            📍 City: <b>{city}</b>
-            </p>
+        st.info(f"👤 Name: {name}")
 
-            <div class="status-good">
-            DONOR STATUS : ACTIVE
-            </div>
+        st.info(f"🩸 Blood Group: {blood_group}")
 
-            </div>
-            """, unsafe_allow_html=True)
+        st.info(f"📍 City: {city}")
 
-        else:
+        st.info(f"🚨 Availability: {availability}")
 
-            st.warning(
-                "Please fill all required fields"
-            )
+        st.info("🏅 Reward Points Earned: +10")
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    else:
 
+        st.error(
+            "⚠ Please fill all required fields"
+        )
 # ================= ORGAN DONATION =================
 
 elif menu == "Organ Donation":
 
-    st.markdown(
-        '<div class="section-title">🫀 Organ Donation</div>',
-        unsafe_allow_html=True
-    )
+    # ================= CUSTOM CSS =================
 
-    st.markdown('<div class="glass">', unsafe_allow_html=True)
+    st.markdown("""
+    <style>
 
-    organs = st.multiselect(
-        "Select Organs",
-        [
-            "Heart",
-            "Kidney",
-            "Liver",
-            "Lungs",
-            "Corneas",
-            "Skin",
-            "Bone"
-        ]
-    )
+    .organ-card{
+        background: linear-gradient(
+            135deg,
+            rgba(15,23,42,0.95),
+            rgba(30,41,59,0.95)
+        );
+        padding:35px;
+        border-radius:25px;
+        border:1px solid rgba(255,255,255,0.08);
+        box-shadow:0 8px 32px rgba(0,0,0,0.35);
+        margin-top:20px;
+    }
 
-    donor_type = st.radio(
-        "Donation Type",
-        [
-            "Living Donor",
-            "After Death"
-        ]
-    )
+    .organ-title{
+        font-size:42px;
+        font-weight:800;
+        color:white;
+        margin-bottom:10px;
+    }
 
-    if st.button("💖 Submit Consent"):
+    .organ-subtitle{
+        color:#cbd5e1;
+        font-size:17px;
+        margin-bottom:25px;
+    }
 
-        st.session_state.points += 20
+    .top-badge{
+        display:inline-block;
+        background:linear-gradient(90deg,#ec4899,#db2777);
+        color:white;
+        padding:10px 20px;
+        border-radius:50px;
+        font-weight:700;
+        margin-bottom:20px;
+    }
 
-        st.markdown(f"""
-        <div class="glass">
+    .stats-card{
+        background:rgba(255,255,255,0.04);
+        border-radius:18px;
+        padding:20px;
+        text-align:center;
+        border:1px solid rgba(255,255,255,0.05);
+    }
 
-        <h2 style="color:#4ade80;">
-        ✅ Consent Submitted Successfully
-        </h2>
+    .stats-number{
+        font-size:32px;
+        font-weight:800;
+        color:#ec4899;
+    }
 
-        <p style="color:#cbd5e1;">
-        Organ donation preferences securely stored
-        in LifeLink AI registry.
-        </p>
+    .stats-label{
+        color:#cbd5e1;
+        font-size:14px;
+    }
 
-        <hr style="border:1px solid #1f2937;">
+    .success-box{
+        background:rgba(34,197,94,0.12);
+        border:1px solid rgba(34,197,94,0.3);
+        padding:25px;
+        border-radius:20px;
+        margin-top:20px;
+    }
 
-        <p style="color:#94a3b8;">
-        🧬 Donation Type:
-        <b>{donor_type}</b>
-        </p>
+    </style>
+    """, unsafe_allow_html=True)
 
-        <p style="color:#94a3b8;">
-        🫀 Selected Organs:
-        <b>{", ".join(organs) if organs else "None Selected"}</b>
-        </p>
 
-        <div class="status-good">
-        ORGAN DONOR VERIFIED
-        </div>
+    # ================= STATS =================
 
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        st.markdown("""
+        <div class="stats-card">
+            <div class="stats-number">50K+</div>
+            <div class="stats-label">Registered Donors</div>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    with c2:
+        st.markdown("""
+        <div class="stats-card">
+            <div class="stats-number">12K+</div>
+            <div class="stats-label">Lives Saved</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c3:
+        st.markdown("""
+        <div class="stats-card">
+            <div class="stats-number">24/7</div>
+            <div class="stats-label">Emergency Support</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c4:
+        st.markdown("""
+        <div class="stats-card">
+            <div class="stats-number">AI</div>
+            <div class="stats-label">Smart Matching</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ================= FORM =================
+
+    with st.container(border=True):
+
+        st.subheader("📝 Organ Donor Registration")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            donor_name = st.text_input(
+                "👤 Full Name",
+                placeholder="Enter full name"
+            )
+
+            age = st.number_input(
+                "🎂 Age",
+                min_value=18,
+                max_value=80,
+                value=21
+            )
+
+            city = st.text_input(
+                "📍 City",
+                placeholder="Enter city"
+            )
+
+            donor_type = st.selectbox(
+                "🧬 Donation Type",
+                [
+                    "Living Donor",
+                    "After Death"
+                ]
+            )
+
+        with col2:
+
+            organs = st.multiselect(
+                "🫀 Select Organs/Tissues",
+                [
+                    "Heart",
+                    "Kidneys",
+                    "Liver",
+                    "Lungs",
+                    "Pancreas",
+                    "Intestines",
+                    "Corneas",
+                    "Skin",
+                    "Bone",
+                    "Bone Marrow",
+                    "Heart Valves",
+                    "Blood Vessels",
+                    "Tendons",
+                    "Middle Ear",
+                    "Hands",
+                    "Face Tissue"
+                ]
+            )
+
+            emergency = st.selectbox(
+                "🚨 Emergency Availability",
+                [
+                    "Available Anytime",
+                    "Available During Day",
+                    "Available During Night",
+                    "Weekends Only"
+                ]
+            )
+
+            blood_group = st.selectbox(
+                "🩸 Blood Group",
+                [
+                    "A+","A-","B+","B-",
+                    "O+","O-","AB+","AB-"
+                ]
+            )
+
+        consent = st.checkbox(
+            "I voluntarily consent to organ donation registration."
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        submit = st.button(
+            "💖 Submit Organ Donation Consent",
+            use_container_width=True
+        )
+
+    # ================= SUCCESS =================
+
+    if submit:
+
+        if donor_name and city and organs and consent:
+
+            st.session_state.points += 20
+
+            with st.container(border=True):
+
+                st.success(
+                    "✅ Organ Donation Consent Submitted Successfully"
+                )
+
+                st.markdown(f"""
+                ### 👤 {donor_name}
+
+                🧬 **Donation Type:** {donor_type}
+
+                🩸 **Blood Group:** {blood_group}
+
+                📍 **City:** {city}
+
+                🚨 **Availability:** {emergency}
+
+                🫀 **Selected Organs:** {", ".join(organs)}
+
+                🏅 **Reward Points Earned:** +20
+                """)
+
+        else:
+
+            st.error(
+                "⚠ Please complete all required fields and consent."
+            )
 
 # ================= AI MATCHING =================
 
