@@ -640,35 +640,6 @@ elif menu == "Blood Donation":
     st.markdown("<br>", unsafe_allow_html=True)
 
 
-    # ================= REGISTRATION SUCCESS =================
-register_clicked = st.button(
-    "✅ Register Donor",
-    use_container_width=True
-)
-
-if register_clicked:
-
-    if name != "" and phone != "" and city != "":
-
-        st.session_state.points += 10
-
-        st.success("✅ Registration Successful")
-
-        st.info(f"👤 Name: {name}")
-
-        st.info(f"🩸 Blood Group: {blood_group}")
-
-        st.info(f"📍 City: {city}")
-
-        st.info(f"🚨 Availability: {availability}")
-
-        st.info("🏅 Reward Points Earned: +10")
-
-    else:
-
-        st.error(
-            "⚠ Please fill all required fields"
-        )
 # ================= ORGAN DONATION =================
 
 elif menu == "Organ Donation":
