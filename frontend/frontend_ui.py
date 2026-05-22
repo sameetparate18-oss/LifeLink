@@ -638,14 +638,29 @@ elif menu == "Blood Donation":
         )
 
     st.markdown("<br>", unsafe_allow_html=True)
- 
-# ===== REGISTER BUTTON =====
-if st.session_state.get("page") == "register":
-    if st.button("Confirm", key="register_confirm"):
-        if name and phone and city:
-            st.session_state.points += 20
+   # ================= REGISTER BUTTON =================
 
-            st.markdown("""
+    blood_register = st.button(
+        "🩸 Register"
+    )
+
+    # ================= REGISTER ACTION =================
+
+    if blood_register:
+
+        if name and phone and city:
+
+            st.session_state.points = st.session_state.get(
+                "points",
+                0
+            ) + 20
+
+            st.success(
+                "✅ Registration Successful"
+            )
+
+            st.markdown(f"""
+
             <div style="
                 background: linear-gradient(90deg,#071428,#1b2a4a);
                 padding:25px;
@@ -654,26 +669,38 @@ if st.session_state.get("page") == "register":
                 color:white;
                 margin-top:20px;
             ">
-            """, unsafe_allow_html=True)
 
-            st.success("✅ Organ Donation Consent Submitted Successfully")
-
-            st.markdown(f"""
             <h1 style="color:white;">👤 {name}</h1>
-            <p style="font-size:22px;">🧬 <b>Donation Type:</b> Living Donor</p>
-            <p style="font-size:22px;">🩸 <b>Blood Group:</b> {blood_group}</p>
-            <p style="font-size:22px;">📍 <b>City:</b> {city}</p>
-            <p style="font-size:22px;">🚨 <b>Availability:</b> {availability}</p>
-            <p style="font-size:22px;">💖 <b>Selected Organs:</b> Kidneys</p>
-            <p style="font-size:22px; color:#facc15;">
+
+            <p style="font-size:22px;">
+            🩸 <b>Blood Group:</b> {blood_group}
+            </p>
+
+            <p style="font-size:22px;">
+            📍 <b>City:</b> {city}
+            </p>
+
+            <p style="font-size:22px;">
+            🚨 <b>Availability:</b> {availability}
+            </p>
+
+            <p style="
+                font-size:22px;
+                color:#facc15;
+            ">
                 🏅 <b>Reward Points Earned:</b> +20
             </p>
+
+            </div>
+
             """, unsafe_allow_html=True)
 
-            st.markdown("</div>", unsafe_allow_html=True)
-
         else:
-            st.error("⚠ Please fill all fields")
+
+            st.error(
+                "⚠ Please fill all fields"
+            )
+
 
 # ================= ORGAN DONATION =================
 
@@ -1007,7 +1034,7 @@ elif menu == "AI Matching":
         data = response.json()
 
         st.write(data)
-        
+
 # ================= DISEASE PREDICTION =================
 
 elif menu == "Disease Prediction":
