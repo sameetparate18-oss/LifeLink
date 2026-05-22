@@ -1,0 +1,15 @@
+fever,cough,headache,vomiting,nausea,fatigue,weakness,body pain,sore throat,cold,dizziness,diarrhea,chest pain,breathing problem,shortness of breath,stomach pain,disease
+1,1,1,0,0,1,1,1,1,1,0,0,0,0,0,0,Flu
+1,1,1,0,0,1,1,1,1,1,0,0,0,0,0,0,Flu
+1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,Common Cold
+1,1,0,0,0,1,0,0,1,1,0,0,0,0,0,0,Common Cold
+1,1,1,0,0,1,1,1,1,0,1,0,0,1,1,0,COVID-19
+1,1,1,0,0,1,1,1,1,0,1,0,0,1,1,0,COVID-19
+0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,Migraine
+0,0,1,0,0,1,1,0,0,0,1,0,0,0,0,0,Migraine
+0,0,0,1,1,1,1,0,0,0,1,1,0,0,0,1,Food Poisoning
+0,0,0,1,1,1,1,0,0,0,1,1,0,0,0,1,Food Poisoning
+1,0,1,1,0,1,1,0,0,0,0,1,0,0,0,1,Typhoid
+1,0,1,1,0,1,1,0,0,0,0,1,0,0,0,1,Typhoid
+0,0,1,0,0,1,1,0,0,0,1,0,1,1,1,0,Heart Disease
+0,0,1,0,0,1,1,0,0,0,1,0,1,1,1,0,Heart Disease

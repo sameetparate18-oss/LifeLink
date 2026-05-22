@@ -1,90 +1,64 @@
-import streamlit as st
-import google.generativeai as genai
+import joblib
+import pandas as pd
 
-# ================= GEMINI CONFIG =================
+# ================= LOAD MODEL =================
 
-genai.configure(
-    api_key="AIzaSyDx1lrEg5_Ldryo3LZ0zgI12nHMdK7i0LA"
+model = joblib.load(
+    "app/ai/disease_model.pkl"
 )
 
-model = genai.GenerativeModel(
-    "gemini-1.5-flash"
-)
+# ================= ALL SYMPTOMS =================
 
-# ================= PAGE =================
+all_symptoms = [
 
-st.set_page_config(
-    page_title="LifeLink AI",
-    layout="wide"
-)
+    "fever",
+    "cough",
+    "headache",
+    "vomiting",
+    "nausea",
+    "fatigue",
+    "weakness",
+    "body pain",
+    "sore throat",
+    "cold",
+    "dizziness",
+    "diarrhea",
+    "chest pain",
+    "breathing problem",
+    "shortness of breath",
+    "stomach pain"
 
-st.title("🏥 LifeLink AI Assistant")
+]
 
-st.write(
-    "Ask anything about health, diseases, symptoms, medicines, fitness, or wellness."
-)
+# ================= PREDICT FUNCTION =================
 
-# ================= CHAT HISTORY =================
+def predict_disease(symptoms):
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+    vector = {}
 
-# DISPLAY OLD MESSAGES
+    for symptom in all_symptoms:
 
-for msg in st.session_state.messages:
+        if symptom in symptoms:
+            vector[symptom] = 1
+        else:
+            vector[symptom] = 0
 
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+    # Convert to DataFrame
+    input_data = pd.DataFrame([vector])
 
-# ================= USER INPUT =================
+    # Prediction
+    disease = model.predict(input_data)[0]
 
-user_input = st.chat_input(
-    "Describe symptoms or ask anything..."
-)
-
-# ================= AI RESPONSE =================
-
-if user_input:
-
-    # SHOW USER MESSAGE
-    st.session_state.messages.append(
-        {
-            "role": "user",
-            "content": user_input
-        }
+    # Confidence
+    probability = max(
+        model.predict_proba(input_data)[0]
     )
 
-    with st.chat_message("user"):
-        st.markdown(user_input)
+    return {
 
-    # AI RESPONSE
-    with st.chat_message("assistant"):
+        "disease": disease,
 
-        with st.spinner("🧠 LifeLink AI Thinking..."):
-
-            prompt = f"""
-            You are LifeLink AI Healthcare Assistant.
-
-            Rules:
-            - Give professional medical guidance.
-            - Do not claim guaranteed diagnosis.
-            - Keep responses clear and modern.
-            - Suggest doctor consultation when needed.
-            - Answer conversationally.
-
-            User Query:
-            {user_input}
-            """
-
-            response = model.generate_content(prompt)
-
-            ai_reply = response.text
-
-            st.markdown(ai_reply)
-
-            st.session_state.messages.append(
-                {
-                    "role": "assistant",
-                    "content": ai_reply
-                }
-            )
+       "confidence": float(
+    round(probability * 100, 2)
+)
+    }

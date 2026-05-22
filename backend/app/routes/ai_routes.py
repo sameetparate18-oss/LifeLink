@@ -1,37 +1,30 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-
-from schemas.user import UserCreate, UserLogin
-from services.auth_service import register_user, login_user
-from core.database import get_db
+from fastapi import APIRouter
+from app.services.ai_matching_service import find_best_donors
 
 router = APIRouter()
 
-@router.post("/register")
-def register(user: UserCreate, db: Session = Depends(get_db)):
+@router.get("/match")
 
-    result = register_user(db, user)
+def match(
 
-    if not result:
-        raise HTTPException(status_code=400, detail="User already exists")
+    blood_group: str,
+    latitude: float,
+    longitude: float,
+    emergency: str
 
-    return {"message": "User registered successfully"}
+):
 
+    results = find_best_donors(
 
-@router.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db)):
+        blood_group,
+        latitude,
+        longitude,
+        emergency
 
-    result = login_user(db, user.email, user.password)
-
-    if not result:
-        raise HTTPException(status_code=400, detail="Invalid credentials")
+    )
 
     return {
-        "message": "Login successful",
-        "token": result["token"],
-        "user": {
-            "id": result["user"].id,
-            "name": result["user"].name,
-            "email": result["user"].email
-        }
+
+        "matches": results
+
     }

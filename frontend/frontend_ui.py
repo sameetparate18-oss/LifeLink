@@ -638,7 +638,42 @@ elif menu == "Blood Donation":
         )
 
     st.markdown("<br>", unsafe_allow_html=True)
+ 
+# ===== REGISTER BUTTON =====
+if st.session_state.get("page") == "register":
+    if st.button("Confirm", key="register_confirm"):
+        if name and phone and city:
+            st.session_state.points += 20
 
+            st.markdown("""
+            <div style="
+                background: linear-gradient(90deg,#071428,#1b2a4a);
+                padding:25px;
+                border-radius:15px;
+                border:1px solid #334155;
+                color:white;
+                margin-top:20px;
+            ">
+            """, unsafe_allow_html=True)
+
+            st.success("✅ Organ Donation Consent Submitted Successfully")
+
+            st.markdown(f"""
+            <h1 style="color:white;">👤 {name}</h1>
+            <p style="font-size:22px;">🧬 <b>Donation Type:</b> Living Donor</p>
+            <p style="font-size:22px;">🩸 <b>Blood Group:</b> {blood_group}</p>
+            <p style="font-size:22px;">📍 <b>City:</b> {city}</p>
+            <p style="font-size:22px;">🚨 <b>Availability:</b> {availability}</p>
+            <p style="font-size:22px;">💖 <b>Selected Organs:</b> Kidneys</p>
+            <p style="font-size:22px; color:#facc15;">
+                🏅 <b>Reward Points Earned:</b> +20
+            </p>
+            """, unsafe_allow_html=True)
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        else:
+            st.error("⚠ Please fill all fields")
 
 # ================= ORGAN DONATION =================
 
@@ -882,7 +917,11 @@ elif menu == "Organ Donation":
 
 # ================= AI MATCHING =================
 
+# ================= AI MATCHING =================
+
 elif menu == "AI Matching":
+
+    import requests
 
     st.markdown(
         '<div class="section-title">🚨 AI Emergency Matching</div>',
@@ -915,31 +954,95 @@ elif menu == "AI Matching":
     </div>
     """, unsafe_allow_html=True)
 
-# ================= DISEASE PREDICTION =================
+    st.title("🚨 AI Emergency Matching")
 
+    # ================= INPUTS =================
+
+    blood_group = st.selectbox(
+
+        "Blood Group",
+
+        ["A+", "B+", "O+", "AB+"]
+
+    )
+
+    latitude = st.number_input(
+        "Latitude"
+    )
+
+    longitude = st.number_input(
+        "Longitude"
+    )
+
+    emergency = st.selectbox(
+
+        "Emergency Level",
+
+        ["Normal", "High", "Critical"]
+
+    )
+
+    # ================= BUTTON =================
+
+    if st.button("Find Donors"):
+
+        response = requests.get(
+
+            "http://127.0.0.1:8000/match",
+
+            params={
+
+                "blood_group": blood_group,
+
+                "latitude": latitude,
+
+                "longitude": longitude,
+
+                "emergency": emergency
+
+            }
+
+        )
+
+        data = response.json()
+
+        st.write(data)
+        
 # ================= DISEASE PREDICTION =================
 
 elif menu == "Disease Prediction":
+
+    import requests
 
     st.markdown(
         '<div class="section-title">🩺 AI Disease Prediction</div>',
         unsafe_allow_html=True
     )
 
-    st.markdown('<div class="glass">', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="glass">',
+        unsafe_allow_html=True
+    )
 
     st.write(
-        "Enter symptoms separated by commas."
+        "Describe your symptoms naturally."
     )
 
     st.info(
-        "Example: fever,cough,fatigue"
+        "Example: I have fever, cough, headache and weakness"
     )
 
-    symptom_input = st.text_input(
-        "Symptoms",
-        placeholder="fever,cough,fatigue"
+    # ================= INPUT =================
+
+    symptom_input = st.text_area(
+
+        "Enter Symptoms",
+
+        placeholder="I have fever, cough, headache and weakness"
+
     )
+
+    # ================= BUTTON =================
 
     if st.button("🔍 Predict Disease"):
 
@@ -953,34 +1056,31 @@ elif menu == "Disease Prediction":
 
             try:
 
-                symptoms = [
-
-                    x.strip().lower()
-
-                    for x in symptom_input.split(",")
-
-                ]
-
                 with st.spinner(
-                    "AI analyzing symptoms..."
+                    "🧠 AI analyzing symptoms..."
                 ):
 
-                    response = requests.post(
+                    response = requests.get(
 
                         "http://127.0.0.1:8000/predict",
 
-                        json={
-                            "symptoms": symptoms
+                        params={
+
+                            "symptoms": symptom_input
+
                         },
 
                         timeout=10
                     )
+
+                # ================= SUCCESS =================
 
                 if response.status_code == 200:
 
                     data = response.json()
 
                     st.markdown(f"""
+
                     <div class="glass">
 
                     <h2 style="color:#4ade80;">
@@ -991,7 +1091,7 @@ elif menu == "Disease Prediction":
                         color:#4ade80;
                         font-size:48px;
                     ">
-                        {data['prediction']}
+                        {data['predicted_disease']}
                     </h1>
 
                     <hr style="
@@ -1000,7 +1100,7 @@ elif menu == "Disease Prediction":
 
                     <p style="color:#cbd5e1;">
                     🎯 Confidence:
-                    <b>{data['confidence']}</b>
+                    <b>{data['confidence']}%</b>
                     </p>
 
                     <p style="color:#cbd5e1;">
@@ -1009,33 +1109,23 @@ elif menu == "Disease Prediction":
                     </p>
 
                     <p style="color:#cbd5e1;">
-                    📝 Description:
-                    <b>{data['description']}</b>
+                    🩺 Symptoms Detected:
+                    <b>{", ".join(data['symptoms_detected'])}</b>
                     </p>
 
-                    <div class="status-good">
-                    AI ANALYSIS SUCCESSFUL
                     </div>
 
-                    </div>
                     """, unsafe_allow_html=True)
 
-                    # ================= PRECAUTIONS =================
+                    # ================= AI RESPONSE =================
 
-                    precautions = data.get(
-                        "precautions",
-                        []
+                    st.subheader("🤖 AI Medical Analysis")
+
+                    st.success(
+                        data["ai_response"]
                     )
 
-                    if precautions:
-
-                        st.subheader(
-                            "🛡 Recommended Precautions"
-                        )
-
-                        for p in precautions:
-
-                            st.write(f"• {p}")
+                # ================= API ERROR =================
 
                 else:
 
@@ -1043,13 +1133,18 @@ elif menu == "Disease Prediction":
                         f"API Error: {response.status_code}"
                     )
 
+            # ================= EXCEPTION =================
+
             except Exception as e:
 
                 st.error(
                     f"Prediction Error: {str(e)}"
                 )
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(
+        '</div>',
+        unsafe_allow_html=True
+    )
 
 # ================= ANALYTICS =================
 
