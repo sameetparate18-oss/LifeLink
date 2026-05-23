@@ -23,8 +23,384 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# ================= LOGIN SESSION =================
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
 
 
+# ================= LOGIN PAGE =================
+
+def login_page():
+
+    st.markdown("""
+    <style>
+
+    /* MAIN BACKGROUND */
+
+    .stApp{
+        background:
+        radial-gradient(circle at top left,#7f1d1d 0%,transparent 25%),
+        radial-gradient(circle at bottom right,#1e3a8a 0%,transparent 25%),
+        linear-gradient(135deg,#020617,#0f172a,#111827);
+
+        background-attachment: fixed;
+    }
+
+    /* REMOVE STREAMLIT */
+
+    #MainMenu {visibility:hidden;}
+    footer {visibility:hidden;}
+    header {visibility:hidden;}
+
+    /* LOGIN WRAPPER */
+
+    .login-container{
+        margin-top:40px;
+        padding:40px;
+    }
+
+    /* GLASS LOGIN CARD */
+
+    .login-box{
+
+        background: rgba(15,23,42,0.78);
+
+        border:1px solid rgba(255,255,255,0.08);
+
+        backdrop-filter: blur(20px);
+
+        border-radius:30px;
+
+        padding:45px;
+
+        box-shadow:
+        0 8px 40px rgba(0,0,0,0.45),
+        0 0 30px rgba(239,68,68,0.08);
+    }
+
+    /* TITLE */
+
+    .login-title{
+
+        text-align:center;
+
+        font-size:70px;
+
+        font-weight:900;
+
+        line-height:1;
+
+        margin-bottom:10px;
+
+        background: linear-gradient(
+            90deg,
+            #ef4444,
+            #f97316,
+            #facc15
+        );
+
+        -webkit-background-clip:text;
+        -webkit-text-fill-color:transparent;
+    }
+
+    /* SUBTITLE */
+
+    .login-subtitle{
+
+        text-align:center;
+
+        color:#cbd5e1;
+
+        font-size:20px;
+
+        margin-bottom:30px;
+    }
+
+    /* BADGE WRAP */
+
+    .badge-wrap{
+
+        display:flex;
+
+        justify-content:center;
+
+        flex-wrap:wrap;
+
+        gap:12px;
+
+        margin-top:20px;
+
+        margin-bottom:35px;
+    }
+
+    /* BADGES */
+
+    .badge{
+
+        background:rgba(255,255,255,0.05);
+
+        border:1px solid rgba(255,255,255,0.08);
+
+        padding:10px 18px;
+
+        border-radius:50px;
+
+        color:white;
+
+        font-size:14px;
+
+        font-weight:700;
+
+        transition:0.3s ease;
+    }
+
+    .badge:hover{
+
+        transform:translateY(-2px);
+
+        border:1px solid rgba(239,68,68,0.5);
+
+        box-shadow:0 0 15px rgba(239,68,68,0.2);
+    }
+
+    /* FEATURE GRID */
+
+    .feature-grid{
+
+        display:grid;
+
+        grid-template-columns:1fr 1fr;
+
+        gap:15px;
+
+        margin-top:25px;
+    }
+
+    /* FEATURE CARDS */
+
+    .feature-card{
+
+        background:rgba(255,255,255,0.03);
+
+        border:1px solid rgba(255,255,255,0.05);
+
+        padding:18px;
+
+        border-radius:18px;
+
+        color:white;
+
+        transition:0.3s ease;
+    }
+
+    .feature-card:hover{
+
+        transform:translateY(-3px);
+
+        border:1px solid rgba(239,68,68,0.4);
+    }
+
+    .feature-title{
+
+        font-size:16px;
+
+        font-weight:700;
+
+        margin-bottom:5px;
+    }
+
+    .feature-desc{
+
+        color:#94a3b8;
+
+        font-size:13px;
+    }
+
+    /* INPUTS */
+
+    div[data-testid="stTextInput"] input {
+
+        background: rgba(255,255,255,0.04);
+
+        border:1px solid rgba(255,255,255,0.08);
+
+        border-radius:14px;
+
+        padding:14px;
+
+        color:white;
+
+        font-size:16px;
+    }
+
+    /* BUTTON */
+
+    .stButton > button {
+
+        width:100%;
+
+        border:none;
+
+        border-radius:16px;
+
+        padding:14px;
+
+        font-size:18px;
+
+        font-weight:700;
+
+        color:white;
+
+        background: linear-gradient(
+            90deg,
+            #ef4444,
+            #dc2626
+        );
+
+        transition:0.3s ease;
+
+        box-shadow:0 6px 25px rgba(239,68,68,0.35);
+    }
+
+    .stButton > button:hover{
+
+        transform:scale(1.02);
+
+        background: linear-gradient(
+            90deg,
+            #dc2626,
+            #991b1b
+        );
+    }
+
+    /* SECURITY BOX */
+
+    .secure-box{
+
+        margin-top:25px;
+
+        background:rgba(34,197,94,0.12);
+
+        border:1px solid rgba(34,197,94,0.25);
+
+        padding:16px;
+
+        border-radius:16px;
+
+        color:#86efac;
+
+        text-align:center;
+
+        font-weight:700;
+    }
+
+    /* ANIMATION */
+
+    @keyframes fadeUp{
+
+        from{
+            opacity:0;
+            transform:translateY(30px);
+        }
+
+        to{
+            opacity:1;
+            transform:translateY(0px);
+        }
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+    left, center, right = st.columns([1,1.3,1])
+
+    with center:
+
+        # ================= TOP SECTION =================
+
+        st.markdown("""
+        <div class="login-container">
+
+        <div class="login-box">
+
+        <div class="login-title">
+        LifeLink AI
+        </div>
+
+        <div class="login-subtitle">
+        Smart Blood & Organ Donation Network
+        </div>
+
+        
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ================= LOGIN INPUTS =================
+
+        username = st.text_input(
+            "👤 Username",
+            placeholder="Enter your username"
+        )
+
+        password = st.text_input(
+            "🔑 Password",
+            type="password",
+            placeholder="Enter your password"
+        )
+
+        st.write("")
+
+        # ================= LOGIN BUTTON =================
+
+        if st.button(
+            "🚀 Access LifeLink AI",
+            use_container_width=True
+        ):
+
+            with st.spinner("Authenticating Secure Portal..."):
+
+                time.sleep(1.5)
+
+                if username == "admin" and password == "1234":
+
+                    st.session_state.logged_in = True
+
+                    st.success(
+                        "✅ Secure Authentication Successful"
+                    )
+
+                    time.sleep(1)
+
+                    st.rerun()
+
+                else:
+
+                    st.error(
+                        "❌ Invalid Username or Password"
+                    )
+
+        # ================= BOTTOM SECTION =================
+
+        st.markdown("""
+        <div class="secure-box">
+        🔐 AI Healthcare Network Protected & Encrypted
+        </div>
+
+            
+        </div>
+
+        </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+# ================= AUTH CHECK =================
+
+if not st.session_state.logged_in:
+
+    login_page()
+    st.stop()
 # ================= HOME PAGE =================
 def home_page():
 
