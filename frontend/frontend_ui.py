@@ -318,23 +318,73 @@ def login_page():
     with center:
 
         # ================= TOP SECTION =================
-
         st.markdown("""
-        <div class="login-container">
+    <style>
 
-        <div class="login-box">
+    .hero-title {
+        font-size: 70px;
+        font-weight: 900;
+        text-align: center;
+        background: linear-gradient(90deg, #ef4444, #f97316, #facc15);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
 
-        <div class="login-title">
-        LifeLink AI
-        </div>
+    .hero-subtitle {
+        text-align: center;
+        font-size: 20px;
+        color: #white;
+    }
 
-        <div class="login-subtitle">
+    .hero-description {
+        text-align: center;
+        color: #94a3b8;
+        max-width: 800px;
+        margin: auto;
+    }
+
+    .badge-container {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .badge {
+        background: rgba(255,255,255,0.05);
+        padding: 8px 14px;
+        border-radius: 20px;
+        color: white;
+        font-size: 13px;
+    }
+
+    </style>
+
+    <div class="hero-title"> LifeLink</div>
+
+    <div class="hero-subtitle">
         Smart Blood & Organ Donation Network
-        </div>
+    </div>
 
-        
-        </div>
-        """, unsafe_allow_html=True)
+    <div class="hero-description">
+        AI-powered, privacy-first, multi-hospital connected healthcare platform
+        designed for real-time donor matching and emergency response.
+    </div>
+
+    <div class="badge-container">
+        <div class="badge">🩸 Blood Donation</div>
+        <div class="badge">🫀 Organ Donation</div>
+        <div class="badge">🤖 AI Matching</div>
+        <div class="badge">🔔 Real-time Alerts</div>
+        <div class="badge">👩 ASHA Integration</div>
+        <div class="badge">🏅 Reward System</div>
+        <div class="badge">🔒 Privacy-first</div>
+    </div>
+
+    """, unsafe_allow_html=True)
+
+    
 
         # ================= LOGIN INPUTS =================
 
@@ -362,7 +412,7 @@ def login_page():
 
                 time.sleep(1.5)
 
-                if username == "admin" and password == "1234":
+                if username == "admin" and password == "1234": 
 
                     st.session_state.logged_in = True
 
